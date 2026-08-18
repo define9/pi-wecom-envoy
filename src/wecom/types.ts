@@ -1,0 +1,1 @@
+export type { WecomClient, WecomIncomingMessage, WecomReplyTarget } from "./client.js";

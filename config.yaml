@@ -1,0 +1,41 @@
+# pi-wecom-envoy configuration
+# Copy this file to config.local.yaml and fill in real values.
+
+wecom:
+  # From 企业微信管理后台 -> 应用 -> 智能机器人 -> 详情
+  botId: "your-bot-id-here"
+  secret: "your-bot-secret-here"
+  # 长连接入口（按官方 SDK 默认值；如果官方不同，按 SDK 文档改）
+  endpoint: "wss://openws.work.weixin.qq.com"
+
+pi:
+  # pi 的工作区目录。每个企微 chat/user 在这里建立子目录。
+  # 在该目录下，AGENTS.md / .pi/settings.json / skills 都会被 SDK 自动加载。
+  workspaceRoot: "./workspace"
+  # 是否按 (chatType, chatId, userId) 隔离 workspace 子目录
+  perChatWorkspace: true
+
+  # 不传则使用用户已有的 ~/.pi/agent/settings.json + auth.json
+  # 留空 = 不指定 model，让 ModelRuntime 按 settings/可用凭据自动选
+  provider: ""
+  model: ""
+  thinkingLevel: "medium"   # off | minimal | low | medium | high | xhigh | max
+
+  # SDK 内嵌不需要子进程；session 持久化靠 SessionManager.create(cwd)
+  # sessions 会被写到 ~/.pi/agent/sessions/（默认），可用 --agentDir 覆盖
+  agentDir: ""
+
+  # 工具白名单；空数组 = 不显式限制
+  tools: []
+  # 排除的工具名
+  excludeTools: []
+
+runtime:
+  logLevel: "info"          # debug | info | warn | error
+  pidFile: "./.envoy.pid"
+  # 流式增量回写企微（每收到 text_delta 就 reply 一次）
+  streamingReply: true
+  # 流式回写的最小间隔（ms），避免触发企微频率限制
+  streamingMinIntervalMs: 400
+  # 每条回复最大字符数（企微单条消息上限约 4096 字节，超出会被截断）
+  maxReplyChars: 4000

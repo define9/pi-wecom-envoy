@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.envoy.pid
+*.log
+sessions/
+config.local.yaml
+_test-*.ts
+
+config.local.yaml
