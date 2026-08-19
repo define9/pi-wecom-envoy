@@ -14,7 +14,7 @@
  *   - LRU 上限避免长时间运行内存膨胀
  */
 
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { join, resolve as pathResolve } from "node:path";
 import {
   createAgentSession,
@@ -85,7 +85,14 @@ export class SessionRegistry {
 
     const cwd = cwdFor(this.cfg.workspaceRoot, k, this.cfg.perChatWorkspace);
     await mkdir(cwd, { recursive: true });
-    this.log.info("creating pi session", { key: ks, cwd });
+    const mcpJsonPath = join(cwd, ".mcp.json");
+    let mcpPreview: string | null = null;
+    try {
+      const raw = await readFile(mcpJsonPath, "utf8");
+      const parsed = JSON.parse(raw);
+      mcpPreview = JSON.stringify(parsed.mcpServers ?? {}).slice(0, 300);
+    } catch { /* missing or invalid */ }
+    this.log.info("creating pi session", { key: ks, cwd, mcpJsonPath, mcpServers: mcpPreview });
 
     // SessionManager.create(cwd) 会自动落到 ~/.pi/agent/sessions/<hash>/<uuid>.jsonl
     // 想换目录请传 SessionManager.create(cwd, { sessionDir: ... })

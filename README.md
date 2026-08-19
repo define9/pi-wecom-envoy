@@ -50,6 +50,9 @@ cp config.yaml config.local.yaml
 | `runtime.streamingReply` | 是否每收到 `text_delta` 就调一次 `reply` |
 | `runtime.streamingMinIntervalMs` | 流式回写最小间隔，避免触发企微频率限制 |
 | `runtime.maxReplyChars` | 单条消息字符上限（企微单条 ~4096 字节） |
+| `runtime.thinkingMode` | 思考过程展示模式：`off`（默认）/ `folded`（折进同条前缀）/ `separate`（独立一条消息） |
+| `runtime.thinkingMaxChars` | 思考摘要字符上限，超出按尾部优先截断 |
+| `runtime.logLevel` | `debug`/`info`/`warn`/`error`；`debug` 打每条 SDK 事件，`info` 打用户消息进出 / 工具调用 |
 
 **已装好的 pi 配置完全复用**：不需要重新 `/login`、不需要重设 `ANTHROPIC_API_KEY`。`ModelRuntime.create()` 不传参时自动读 `~/.pi/agent/settings.json` 和 `auth.json`。
 
@@ -91,6 +94,17 @@ ENVOY_CONFIG=config.local.yaml pnpm start # 单次运行
 - 监听 `session.subscribe` 的 `message_update.text_delta`，按 `streamingMinIntervalMs` 节流后调 `wecom.reply()`
 - 最终回复保证发一次（即流式没赶上也会补发）
 - 企微 `reply_message` 必须在收到消息后 N 秒内调用；超时未发的部分会走 `send_message`（TODO：当前实现只 reply，不主动降级；如果你看到 "消息超时" 报错，请扩展 `runPrompt` 在 settled 后判断 `reply` 时效）
+
+## 开新会话
+
+用户发送 `/new`，envoy 会：
+
+1. 如果当前 session 有 in-flight prompt，等待其结束
+2. `dispose()` 当前 session（取消订阅、释放 handle）
+3. 回复"已开新会话"
+4. 下次消息走 `registry.acquire()`，因为 key 已不存在，会创建**新** AgentSession，对应**新** jsonl 文件
+
+旧会话文件仍保留在 `~/.pi/agent/sessions/<hash>/` 下，可手动查看/导出。
 
 ## 已知限制 / TODO
 

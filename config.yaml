@@ -39,3 +39,11 @@ runtime:
   streamingMinIntervalMs: 400
   # 每条回复最大字符数（企微单条消息上限约 4096 字节，超出会被截断）
   maxReplyChars: 4000
+  # 思考过程展示模式
+  #   off      = 不展示（默认；只发最终结论）
+  #   folded   = 折进同一条回复，前缀加 `> 💭 思考过程` 引用块摘要 + 正文
+  #   separate = 思考摘要单独发一条 markdown，正文走流式回复（两条独立消息）
+  thinkingMode: "off"
+  # 思考摘要最大字符数（folded 用于前缀，separate 用于独立消息）；
+  # 超出时按"尾部优先"截断（最贴近结论那段最有价值）。
+  thinkingMaxChars: 1000

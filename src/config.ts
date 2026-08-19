@@ -25,6 +25,10 @@ export interface RuntimeConfig {
   streamingReply: boolean;
   streamingMinIntervalMs: number;
   maxReplyChars: number;
+  /** 思考过程展示模式 */
+  thinkingMode: "off" | "folded" | "separate";
+  /** 思考摘要最大字符数（超出按尾部优先截断；folded 用于前缀，separate 用于独立消息） */
+  thinkingMaxChars: number;
 }
 
 export interface AppConfig {
@@ -75,7 +79,18 @@ export async function loadConfig(pathOrOpts?: string | LoadConfigOptions): Promi
   }
 
   const raw = await readFile(picked, "utf8");
-  const parsed = YAML.parse(raw) as Partial<AppConfig>;
+  const parsed = YAML.parse(raw) as Partial<AppConfig> & {
+    runtime?: Partial<AppConfig["runtime"]> & { thinkingFolded?: boolean; thinkingMaxChars?: number };
+  };
+
+  // 旧配置兼容：thinkingFolded=true → thinkingMode="folded"，并提示迁移
+  if (parsed.runtime?.thinkingFolded !== undefined && parsed.runtime?.thinkingMode === undefined) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[envoy] runtime.thinkingFolded 已废弃，请改用 thinkingMode: ${parsed.runtime.thinkingFolded ? '"folded"' : '"off"'}`,
+    );
+    parsed.runtime.thinkingMode = parsed.runtime.thinkingFolded ? "folded" : "off";
+  }
 
   const cfg: AppConfig = {
     wecom: {
@@ -99,6 +114,8 @@ export async function loadConfig(pathOrOpts?: string | LoadConfigOptions): Promi
       streamingReply: parsed.runtime?.streamingReply ?? true,
       streamingMinIntervalMs: parsed.runtime?.streamingMinIntervalMs ?? 400,
       maxReplyChars: parsed.runtime?.maxReplyChars ?? 4000,
+      thinkingMode: parsed.runtime?.thinkingMode ?? "off",
+      thinkingMaxChars: parsed.runtime?.thinkingMaxChars ?? 1000,
     },
   };
 
